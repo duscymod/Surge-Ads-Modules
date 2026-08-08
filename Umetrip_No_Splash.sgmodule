@@ -1,7 +1,5 @@
 #!name=Umetrip No Splash Ads
 #!desc=Block Umetrip old and new splash ad APIs; may affect homepage banner images
-#!author=Local Fix
-#!date=2026-07-24
 
 [URL Rewrite]
 
