@@ -1,11 +1,13 @@
-#!name=航旅纵横开屏广告
-#!desc=拦截航旅纵横新旧开屏广告接口；可能影响首页横幅图片
+#!name=Umetrip No Splash Ads
+#!desc=Block Umetrip old and new splash ad APIs; may affect homepage banner images
 #!author=Local Fix
 #!date=2026-07-24
 
 [URL Rewrite]
+
 ^https:\/\/oss\.umetrip\.com\/fs\/advert\/polite _ reject
 ^https?:\/\/(discardrp|startup)\.umetrip\.com\/gateway\/api\/umetrip\/native _ reject
 
 [MITM]
+
 hostname = %APPEND% oss.umetrip.com, discardrp.umetrip.com, startup.umetrip.com
