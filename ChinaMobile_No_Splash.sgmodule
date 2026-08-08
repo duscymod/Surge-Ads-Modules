@@ -1,7 +1,5 @@
 #!name=China Mobile No Splash Ads
 #!desc=Block China Mobile app splash screen and homepage ad APIs
-#!author=Local Fix
-#!date=2026-07-24
 
 [URL Rewrite]
 
