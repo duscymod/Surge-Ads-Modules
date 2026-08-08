@@ -1,0 +1,11 @@
+#!name=中国移动开屏广告
+#!desc=拦截中国移动 App 开屏和首页广告接口
+#!author=Local Fix
+#!date=2026-07-24
+
+[URL Rewrite]
+^https:\/\/(client\.app\.coc|clientaccess)\.10086\.cn\/biz-orange\/DN\/init\/startInit _ reject
+^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/explorePage\/getAdverList _ reject
+
+[MITM]
+hostname = %APPEND% client.app.coc.10086.cn, clientaccess.10086.cn
