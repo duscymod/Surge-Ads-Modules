@@ -5,6 +5,8 @@
 
 ^https:\/\/(client\.app\.coc|clientaccess)\.10086\.cn\/biz-orange\/DN\/init\/startInit _ reject
 ^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/explorePage\/getAdverList _ reject
+^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homepagePopup\/getSortInfo$ _ reject
+^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getToast$ _ reject
 
 [MITM]
 
