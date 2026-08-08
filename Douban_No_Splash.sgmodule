@@ -1,0 +1,8 @@
+#!name=Douban No Splash Ads
+#!desc=Remove confirmed splash_preload ads only
+
+[Script]
+Douban Splash Preload Filter = type=http-response,pattern=^https:\/\/api\.douban\.com\/v2\/app_ads\/splash_preload$,requires-body=true,max-size=1048576,script-path=https://raw.githubusercontent.com/duscymod/surge-scripts/main/douban_splash.js
+
+[MITM]
+hostname = %APPEND% api.douban.com
