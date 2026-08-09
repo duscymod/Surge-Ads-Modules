@@ -1,23 +1,3 @@
-// ============================================================
-// Microsoft Rewards 自动任务（Surge cron 版）
-// 由油猴脚本 "Get Microsoft Rewards v1.0.1.2" 转换
-// 功能：签到 / 阅读 / 活动 / PC+移动搜索
-//
-// v1.2 修复（对照官方文档 manual.nssurge.com 逐条核实）：
-//   - $httpClient 请求显式设置 auto-cookie:false（文档默认开启自动 Cookie 管理，
-//     会干扰搜索时手动构造的设备 Cookie）
-//
-// v1.1 修复：
-//   - $httpClient.request() → 官方文档列出的 per-method API
-//   - timeout 单位修正为「秒」（Surge 约定）
-//   - OAuth token 端点改为 POST + application/x-www-form-urlencoded
-//   - 暂停时长按剩余预算自适应截断，不再与脚本超时冲突
-//   - Cookie 按域名分键存储，读取时带 fallback 链
-//   - updateData 失败时清空旧 dashboard
-//   - 最终通知区分 成功/部分/失败
-// ============================================================
-
-// ========== 配置 ==========
 const CONFIG = {
   pc: { minDelay: 15000, maxDelay: 30000 },
   mobile: { minDelay: 20000, maxDelay: 35000 },
@@ -25,7 +5,6 @@ const CONFIG = {
     pc: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.2420.81',
     mobile: 'Mozilla/5.0 (Linux; Android 16; MCE16 Build/BP3A.250905.014) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36 EdgA/123.0.2420.102'
   },
-  // 多个热搜 API 备用源（搜索关键词）
   hotApis: [
     { url: 'https://hot.baiwumm.com/api/', sources: ['weibo', 'douyin', 'baidu', 'zhihu', 'toutiao'] },
     { url: 'https://hotapi.nntool.cc/', sources: ['weibo', 'douyin', 'baidu', 'toutiao', 'zhihu'] },
@@ -40,13 +19,11 @@ const CONFIG = {
   timeBudget: 8 * 60 * 1000  // 单次运行时间预算（配合模块 timeout=600 秒，预留余量）
 };
 
-// ========== 存储（GM_setValue/GM_getValue 替代）==========
 const store = {
   get: k => $persistentStore.read(k) || '',
   set: (k, v) => $persistentStore.write(String(v), k)
 };
 
-// ========== 工具函数 ==========
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const randomPick = arr => arr[Math.floor(Math.random() * arr.length)];
 const randomRange = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -66,9 +43,6 @@ const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => 
 
 const log = msg => console.log(`[${new Date().toLocaleTimeString().slice(0, 8)}] ${msg}`);
 
-// ========== HTTP 封装（GM_xmlhttpRequest 替代）==========
-// Surge 的 $httpClient 只有 get/post/put/delete/head/options/patch，
-// 没有通用的 .request()；timeout 单位为「秒」（默认 5 秒）。
 const HTTP_METHODS = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'];
 
 function httpRequest(options) {
@@ -90,8 +64,6 @@ function httpRequest(options) {
       url: options.url,
       headers: options.headers || {},
       timeout: Math.ceil((options.timeout || 20000) / 1000), // 毫秒 → 秒
-      // 显式关闭自动 Cookie 管理（文档默认开启）：本脚本的 Cookie 全部手动构造
-      // （搜索时需要精确控制设备 Cookie _Rwho），不能被 Surge 自动追加/覆盖
       'auto-cookie': false
     };
     if (options.data || options.body) opts.body = options.data || options.body;
@@ -131,9 +103,6 @@ function httpRequest(options) {
   })();
 }
 
-// ========== Cookie 按域名读取（fallback 链）==========
-// 捕获端（bing-cookie.js）按域名分键存储，读取时按优先级回退，
-// 避免"最后访问哪个域名就覆盖谁"的问题。
 const COOKIE_KEYS = {
   rewards: ['bing_cookie_rewards', 'bing_cookie', 'bing_cookie_www', 'bing_cookie_cn'],
   www: ['bing_cookie_www', 'bing_cookie', 'bing_cookie_cn', 'bing_cookie_rewards'],
@@ -149,7 +118,6 @@ function getCookieFor(domain) {
   return '';
 }
 
-// ========== 热搜词（多源自动切换）==========
 async function getHotQuery() {
   const apis = [...CONFIG.hotApis].sort(() => Math.random() - 0.5);
   for (const api of apis) {
@@ -167,7 +135,6 @@ async function getHotQuery() {
   return `${randomPick(CONFIG.keywords)} ${Math.random().toString(36).slice(2, 6)}`;
 }
 
-// ========== 状态 ==========
 let state = {
   level: 1, points: 0,
   pcCur: 0, pcMax: 0,
@@ -177,7 +144,6 @@ let state = {
 };
 let dashboard = null; // 失败时会被清空，防止旧数据被误用
 
-// ========== 搜索进度保存/恢复 ==========
 function saveProgress() {
   store.set('bing_search_progress', JSON.stringify({ date: getDateHyphen(), searchCount: state.searchCount }));
 }
@@ -190,7 +156,6 @@ function loadProgress() {
   } catch (e) { }
 }
 
-// ========== 数据刷新（失败返回 false 并清空旧数据）==========
 async function updateData() {
   dashboard = null; // 先清空，失败时不残留旧状态
   try {
@@ -232,8 +197,6 @@ async function updateData() {
   }
 }
 
-// ========== OAuth Token（活动/签到/阅读用）==========
-// 官方端点要求 POST + application/x-www-form-urlencoded
 const AUTH_URL = 'https://login.live.com/oauth20_authorize.srf?client_id=0000000040170455&scope=service::prod.rewardsplatform.microsoft.com::MBI_SSL&response_type=code&redirect_uri=https://login.live.com/oauth20_desktop.srf';
 const TOKEN_URL = 'https://login.live.com/oauth20_token.srf';
 const TOKEN_SCOPE = 'service%3A%2F%2Fprod.rewardsplatform.microsoft.com%3A%3AMBI_SSL';
@@ -307,7 +270,6 @@ async function withAccessTokenRequest(requestFn) {
   }
 }
 
-// ========== 任务结果统计（用于最终通知）==========
 const results = {};
 const statusIcon = s => ({ ok: '✅', partial: '⚠️', skip: '⏭️', fail: '❌' }[s] || '❓');
 
@@ -345,7 +307,6 @@ async function runSign() {
   }
 }
 
-// ========== 阅读任务 ==========
 async function runRead() {
   log('⏳ 开始阅读任务...');
   try {
@@ -392,7 +353,6 @@ async function runRead() {
   }
 }
 
-// ========== 活动任务 ==========
 async function getSearchToken() {
   try {
     const html = await httpRequest({
@@ -432,7 +392,6 @@ async function runPromo() {
   for (const p of taskList) {
     try {
       log(`▶️ 执行: ${p.title}`);
-      // 请求1: 标准 ReportActivity
       await httpRequest({
         method: 'POST',
         url: 'https://rewards.bing.com/api/reportactivity?X-Requested-With=XMLHttpRequest',
@@ -444,7 +403,6 @@ async function runPromo() {
         },
         data: `id=${p.offerId}&hash=${p.hash}&activityAmount=1&__RequestVerificationToken=${token}`
       });
-      // 请求2: V1 API（Quiz 类型上报，帮助触发任务完成）
       await httpRequest({
         method: 'POST',
         url: 'https://www.bing.com/msrewards/api/v1/ReportActivity?ajaxreq=1',
@@ -474,14 +432,12 @@ async function runPromo() {
   await updateData();
 }
 
-// ========== 搜索任务 ==========
 async function doSearch(query, isMobile) {
   const host = isMobile ? 'cn.bing.com' : 'www.bing.com';
   const ua = isMobile ? CONFIG.ua.mobile : CONFIG.ua.pc;
   const deviceCookie = `_Rwho=u=${isMobile ? 'm' : 'd'}&ts=${getDateHyphen()}`;
   const searchUrl = `https://${host}/search?q=${encodeURIComponent(query)}&form=QBLH`;
 
-  // 基础 cookie 去掉设备相关项，注入本次设备标识（模拟原脚本的删 cookie 逻辑）
   const baseCookie = getCookieFor(isMobile ? 'cn' : 'www').replace(/_(EDGE_S|Rwho|RwBf)=[^;]*;?\s*/g, '');
   const fullCookie = (deviceCookie + '; ' + baseCookie).replace(/;\s*$/, '');
 
@@ -492,13 +448,10 @@ async function doSearch(query, isMobile) {
   };
 
   try {
-    // 1. 搜索
     const searchResult = await httpRequest({ url: searchUrl, headers });
-    // 提取 IG 参数用于上报
     const igMatch = searchResult.match(/,IG:"([^"]+)"/);
     const ig = igMatch ? igMatch[1] : uuid().replace(/-/g, '').toUpperCase();
 
-    // 2. ncheader（计分核心之一）
     try {
       await httpRequest({
         method: 'POST',
@@ -535,7 +488,6 @@ async function runSearch() {
   const startTime = Date.now();
   const withinBudget = () => Date.now() - startTime < CONFIG.timeBudget;
 
-  // 暂停机制：时长按剩余预算自适应截断，避免 sleep 超过脚本超时
   const maybePause = async () => {
     if (!CONFIG.pause.enabled || state.searchCount % CONFIG.pause.interval !== 0) return;
     const remaining = CONFIG.timeBudget - (Date.now() - startTime);
@@ -550,7 +502,6 @@ async function runSearch() {
 
   let truncated = false;
 
-  // ---- PC 搜索 ----
   if (pcNeed > 0) {
     log(`💻 PC搜索 ${pcNeed} 次`);
     for (let i = 0; i < pcNeed && withinBudget(); i++) {
@@ -565,7 +516,6 @@ async function runSearch() {
     }
   }
 
-  // ---- 移动搜索 ----
   if (mobNeed > 0 && withinBudget()) {
     log(`📱 移动搜索 ${mobNeed} 次`);
     for (let i = 0; i < mobNeed && withinBudget(); i++) {
@@ -591,7 +541,6 @@ async function runSearch() {
   }
 }
 
-// ========== 主流程 ==========
 (async () => {
   log('🚀 Bing Rewards 自动任务开始');
   if (!getCookieFor('rewards') && !getCookieFor('www') && !getCookieFor('cn')) {
@@ -609,7 +558,6 @@ async function runSearch() {
     log(`❌ 任务异常: ${e.message}`);
   }
 
-  // 按实际结果区分通知级别
   const tasks = ['sign', 'read', 'promo', 'search'];
   const nFail = tasks.filter(k => results[k] === 'fail').length;
   const nOk = tasks.filter(k => results[k] === 'ok').length;
