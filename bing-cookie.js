@@ -1,22 +1,6 @@
-// ============================================================
-// Bing Rewards - Cookie / 授权码 捕获脚本（http-response 类型）
-// 功能：
-//   1. 手动设置入口：http://bing.rewards.setup/?cookie=xxx&auth_code=xxx
-//   2. 捕获 OAuth 授权码（login.live.com/oauth20_desktop.srf 重定向）
-//   3. 捕获登录 Cookie（按域名分键存储，互不覆盖）
-//
-// 存储键：
-//   bing_cookie_www       www.bing.com 捕获
-//   bing_cookie_cn        cn.bing.com 捕获
-//   bing_cookie_rewards   rewards.bing.com 捕获
-//   bing_cookie           手动设置的主键（作为 fallback）
-//   bing_auth_code        OAuth 授权码
-// ============================================================
-
 const url = $request.url || '';
 const headers = $request.headers || {};
 
-// 大小写不敏感地读取请求头
 function getHeader(name) {
   const lower = name.toLowerCase();
   for (const k in headers) {
@@ -27,7 +11,6 @@ function getHeader(name) {
 
 const cookie = getHeader('cookie') || '';
 
-// 按域名决定存储键
 function cookieKey(u) {
   if (u.indexOf('rewards.bing.com') >= 0) return 'bing_cookie_rewards';
   if (u.indexOf('cn.bing.com') >= 0) return 'bing_cookie_cn';
@@ -35,7 +18,6 @@ function cookieKey(u) {
   return '';
 }
 
-// ---- 1. 手动设置入口（备用方案）----
 if (url.indexOf('bing.rewards.setup') >= 0) {
   const params = {};
   (url.split('?')[1] || '').split('&').forEach(kv => {
@@ -62,7 +44,6 @@ if (url.indexOf('bing.rewards.setup') >= 0) {
   return; // 每个执行周期只调用一次 $done()
 }
 
-// ---- 2. 捕获 OAuth 授权码 ----
 if (url.indexOf('oauth20_desktop.srf') >= 0 && url.indexOf('code=') >= 0) {
   const m = url.match(/[?&]code=([^&]+)/);
   if (m && m[1]) {
@@ -74,7 +55,6 @@ if (url.indexOf('oauth20_desktop.srf') >= 0 && url.indexOf('code=') >= 0) {
   }
 }
 
-// ---- 3. 捕获登录 Cookie（按域名分键，避免互相覆盖）----
 const key = cookieKey(url);
 if (cookie && key) {
   $persistentStore.write(cookie, key);
