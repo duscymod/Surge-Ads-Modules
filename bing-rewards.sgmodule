@@ -1,0 +1,19 @@
+#!name=Bing Rewards 自动任务
+#!desc=每日自动完成微软积分任务（签到/阅读/活动/PC+移动搜索），由油猴脚本 Get Microsoft Rewards v1.0.1.2 转换
+#!author=converted
+#!version=1.1
+
+[Script]
+; ===== Cookie / 授权码 捕获（保持 MITM 开启即可自动维护）=====
+BingRewards-Cookie = type=http-response,pattern=^https?:\/\/(www|cn)\.bing\.com\/,requires-body=false,script-path=bing-cookie.js,timeout=10
+BingRewards-RewardsCookie = type=http-response,pattern=^https?:\/\/rewards\.bing\.com\/,requires-body=false,script-path=bing-cookie.js,timeout=10
+BingRewards-Auth = type=http-response,pattern=^https?:\/\/login\.live\.com\/oauth20_desktop\.srf,requires-body=false,script-path=bing-cookie.js,timeout=10
+; ===== 手动设置入口（备用，不用 MITM 时可用）=====
+BingRewards-Setup = type=http-request,pattern=^http:\/\/bing\.rewards\.setup\/,script-path=bing-cookie.js,timeout=10
+; ===== 每日定时任务（08:00 执行；可自行加多个时间段继续未完成进度）=====
+; timeout 单位是秒，600 为当前测试值（脚本最长运行时间以 Surge 实际限制为准）
+; iOS 用户如需 App 挂起时仍能触发，可加 wake-system=true（仅 iOS 支持）
+BingRewards-Daily = type=cron,cronexp=0 8 * * *,script-path=bing-rewards.js,timeout=600
+
+[MITM]
+hostname = %APPEND% www.bing.com, cn.bing.com, rewards.bing.com, login.live.com
