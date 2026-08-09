@@ -1,6 +1,6 @@
 #!name=Bing Rewards 自动任务
 #!desc=Microsoft Rewards
-#!requirement=SYSTEM=='iOS'
+#!system=ios
 
 [Script]
 BingRewards-Cookie = type=http-request,pattern=^https:\/\/(?:www|cn)\.bing\.com\/,requires-body=false,script-path=https://raw.githubusercontent.com/duscymod/Surge-Ads-Modules/main/bing-cookie.js,script-update-interval=3600,timeout=10
