@@ -106,7 +106,12 @@
       log('OAuth code saved manually');
     }
 
-    $done({});
+    $done({
+      response: {
+        status: 200,
+        body: 'ok'
+      }
+    });
     return;
   }
 
@@ -162,7 +167,7 @@
     'cookie'
   );
 
-  if (cookie) {
+  if (cookie && cookie.indexOf('_U=') >= 0) {
     const host = getHost(url);
 
     let key = '';
@@ -192,10 +197,6 @@
       );
     }
 
-    $persistentStore.write(
-      cookie,
-      'bing_cookie'
-    );
   }
 
   $done({});
