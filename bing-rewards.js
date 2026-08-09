@@ -1943,15 +1943,18 @@ async function runSearch(
         await getHotQuery();
 
 
-      await doSearch(
-        query,
-        false
-      );
+      if (
+        await doSearch(
+          query,
+          false
+        )
+      ) {
 
+        state.searchCount++;
 
-      state.searchCount++;
+        saveProgress();
 
-      saveProgress();
+      }
 
 
       await sleep(
@@ -2005,15 +2008,18 @@ async function runSearch(
         await getHotQuery();
 
 
-      await doSearch(
-        query,
-        true
-      );
+      if (
+        await doSearch(
+          query,
+          true
+        )
+      ) {
 
+        state.searchCount++;
 
-      state.searchCount++;
+        saveProgress();
 
-      saveProgress();
+      }
 
 
       await sleep(
