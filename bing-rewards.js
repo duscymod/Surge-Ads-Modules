@@ -897,6 +897,31 @@ let accessToken = '';
 let accessTokenExpiresAt = 0;
 
 
+function clearAuth() {
+
+  store.set(
+    'bing_auth_code',
+    ''
+  );
+
+  store.set(
+    'bing_refresh_token',
+    ''
+  );
+
+  accessToken = '';
+
+  accessTokenExpiresAt = 0;
+
+  $notification.post(
+    'Bing Rewards',
+    '授权已失效，请重新授权',
+    AUTH_URL
+  );
+
+}
+
+
 async function getAccessToken(
   forceRefresh = false
 ) {
@@ -1035,6 +1060,8 @@ async function getAccessToken(
         }`
       );
 
+      clearAuth();
+
       return null;
     }
 
@@ -1071,6 +1098,15 @@ async function getAccessToken(
     log(
       `OAuth Error：${error.message}`
     );
+
+    if (
+      error.status === 400 ||
+      error.status === 401
+    ) {
+
+      clearAuth();
+
+    }
 
     return null;
   }
@@ -2126,18 +2162,21 @@ async function runSearch(
     }
 
 
-    await updateData();
+    const dataOk =
+      await updateData();
 
 
     const title =
-      (
-        state.pcCur >=
-          state.pcMax &&
-        state.mobileCur >=
-          state.mobileMax
-      )
-        ? '任务执行结束'
-        : '任务部分完成';
+      !dataOk
+        ? '任务执行失败'
+        : (
+            state.pcCur >=
+              state.pcMax &&
+            state.mobileCur >=
+              state.mobileMax
+          )
+            ? '任务执行结束'
+            : '任务部分完成';
 
 
     $notification.post(
