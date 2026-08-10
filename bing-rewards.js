@@ -203,16 +203,8 @@ function formEncode(object) {
 function getCookie(host) {
 
   if (host === 'rewards.bing.com') {
-    return (
-      store.get(
-        'bing_cookie_rewards'
-      ) ||
-      store.get(
-        'bing_cookie_www'
-      ) ||
-      store.get(
-        'bing_cookie'
-      )
+    return store.get(
+      'bing_cookie_rewards'
     );
   }
 
@@ -645,6 +637,14 @@ async function updateData() {
     getCookie(
       'rewards.bing.com'
     );
+
+  log(
+    `Rewards Cookie: ${
+      cookie
+        ? `已存在，长度 ${cookie.length}`
+        : '不存在'
+    }`
+  );
 
 
   if (!cookie) {
